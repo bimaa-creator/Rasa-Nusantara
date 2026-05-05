@@ -1,0 +1,318 @@
+import React, { useState, useMemo } from 'react';
+import { 
+  Utensils, 
+  Coffee, 
+  ChevronRight, 
+  ShoppingCart, 
+  Trash2, 
+  CreditCard, 
+  Wallet, 
+  Banknote,
+  CheckCircle2,
+  Clock,
+  ChevronLeft
+} from 'lucide-react';
+
+const MENU_DATA = {
+  makanan: [
+    { id: 1, name: 'Nasi Goreng Spesial', price: 25000, description: 'Nasi goreng dengan telur, ayam, dan kerupuk.', image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&q=80&w=200' },
+    { id: 2, name: 'Ayam Bakar Madu', price: 35000, description: 'Ayam bakar bumbu madu yang meresap.', image: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&q=80&w=200' },
+    { id: 3, name: 'Sate Ayam (10 Tusuk)', price: 30000, description: 'Sate ayam dengan bumbu kacang kental.', image: 'https://images.unsplash.com/photo-1529563021793-9686088cc51c?auto=format&fit=crop&q=80&w=200' },
+    { id: 4, name: 'Mie Goreng Seafood', price: 28000, description: 'Mie goreng dengan udang dan cumi segar.', image: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=200' },
+  ],
+  minuman: [
+    { id: 101, name: 'Es Teh Manis', price: 5000, description: 'Teh pilihan dengan gula asli.', image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&q=80&w=200' },
+    { id: 102, name: 'Kopi Susu Gula Aren', price: 18000, description: 'Espresso dengan susu segar dan gula aren.', image: 'https://images.unsplash.com/photo-1559496417-e7f25cb247f3?auto=format&fit=crop&q=80&w=200' },
+    { id: 103, name: 'Juice Alpukat', price: 15000, description: 'Alpukat mentega dengan topping cokelat.', image: 'https://images.unsplash.com/photo-1589733593535-918377e76833?auto=format&fit=crop&q=80&w=200' },
+    { id: 104, name: 'Mineral Water', price: 4000, description: 'Air mineral dingin 600ml.', image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?auto=format&fit=crop&q=80&w=200' },
+  ]
+};
+
+const TABLES = Array.from({ length: 12 }, (_, i) => i + 1);
+
+const App = () => {
+  const [step, setStep] = useState(1); // 1: Meja, 2: Menu, 3: Pembayaran, 4: Selesai
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [category, setCategory] = useState('makanan');
+
+  const addToCart = (item) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.id === item.id);
+      if (existing) {
+        return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
+      }
+      return [...prev, { ...item, qty: 1 }];
+    });
+  };
+
+  const removeFromCart = (id) => {
+    setCart(prev => prev.filter(item => item.id !== id));
+  };
+
+  const updateQty = (id, delta) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === id) {
+        const newQty = Math.max(1, item.qty + delta);
+        return { ...item, qty: newQty };
+      }
+      return item;
+    }));
+  };
+
+  const totalPrice = cart.reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(price);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      {/* Header */}
+      <header className="bg-white border-b sticky top-0 z-10 px-4 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="bg-orange-500 p-2 rounded-lg text-white">
+            <Utensils size={24} />
+          </div>
+          <h1 className="font-bold text-xl tracking-tight">Rasa Nusantara</h1>
+        </div>
+        {selectedTable && (
+          <div className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-semibold">
+            Meja {selectedTable}
+          </div>
+        )}
+      </header>
+
+      <main className="max-w-md mx-auto pb-32">
+        
+        {/* Step 1: Pilih Meja */}
+        {step === 1 && (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-2 text-center">Selamat Datang!</h2>
+            <p className="text-slate-500 text-center mb-8">Silakan pilih nomor meja Anda untuk memulai pesanan.</p>
+            
+            <div className="grid grid-cols-3 gap-4">
+              {TABLES.map(num => (
+                <button
+                  key={num}
+                  onClick={() => setSelectedTable(num)}
+                  className={`aspect-square rounded-2xl flex items-center justify-center text-xl font-bold transition-all border-2
+                    ${selectedTable === num 
+                      ? 'bg-orange-500 border-orange-500 text-white shadow-lg scale-105' 
+                      : 'bg-white border-slate-100 text-slate-600 hover:border-orange-200 shadow-sm'}`}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+            
+            <button
+              disabled={!selectedTable}
+              onClick={() => setStep(2)}
+              className={`w-full mt-10 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all
+                ${selectedTable ? 'bg-orange-500 text-white shadow-md' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+            >
+              Lanjut Pilih Menu <ChevronRight size={20} />
+            </button>
+          </div>
+        )}
+
+        {/* Step 2: Pilih Menu */}
+        {step === 2 && (
+          <div className="p-0">
+            {/* Category Tabs */}
+            <div className="flex bg-white border-b sticky top-[65px] z-10">
+              <button 
+                onClick={() => setCategory('makanan')}
+                className={`flex-1 py-4 font-semibold flex items-center justify-center gap-2 border-b-2 transition-all
+                  ${category === 'makanan' ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-500'}`}
+              >
+                <Utensils size={18} /> Makanan
+              </button>
+              <button 
+                onClick={() => setCategory('minuman')}
+                className={`flex-1 py-4 font-semibold flex items-center justify-center gap-2 border-b-2 transition-all
+                  ${category === 'minuman' ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-500'}`}
+              >
+                <Coffee size={18} /> Minuman
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {MENU_DATA[category].map(item => {
+                const inCart = cart.find(c => c.id === item.id);
+                return (
+                  <div key={item.id} className="bg-white rounded-2xl p-3 flex gap-4 shadow-sm border border-slate-50">
+                    <img 
+                      src={item.image} 
+                      alt={item.name} 
+                      className="w-24 h-24 object-cover rounded-xl bg-slate-200"
+                    />
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="font-bold text-slate-800">{item.name}</h3>
+                        <p className="text-xs text-slate-500 line-clamp-1">{item.description}</p>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="font-bold text-orange-600">{formatPrice(item.price)}</span>
+                        
+                        {inCart ? (
+                          <div className="flex items-center gap-3 bg-orange-50 rounded-lg px-2 py-1">
+                            <button 
+                              onClick={() => updateQty(item.id, -1)}
+                              className="w-6 h-6 flex items-center justify-center text-orange-600 font-bold"
+                            >
+                              -
+                            </button>
+                            <span className="text-sm font-bold w-4 text-center">{inCart.qty}</span>
+                            <button 
+                              onClick={() => updateQty(item.id, 1)}
+                              className="w-6 h-6 flex items-center justify-center text-orange-600 font-bold"
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => addToCart(item)}
+                            className="bg-orange-500 text-white p-1.5 rounded-lg shadow-sm active:scale-95 transition-transform"
+                          >
+                            <ShoppingCart size={18} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Pembayaran */}
+        {step === 3 && (
+          <div className="p-6">
+            <button 
+              onClick={() => setStep(2)}
+              className="flex items-center text-slate-500 mb-6 text-sm gap-1 hover:text-orange-500 transition-colors"
+            >
+              <ChevronLeft size={16} /> Kembali ke Menu
+            </button>
+            
+            <h2 className="text-2xl font-bold mb-6">Ringkasan Pesanan</h2>
+            
+            <div className="bg-white rounded-2xl p-4 shadow-sm mb-6 border border-slate-100">
+              <div className="space-y-4">
+                {cart.map(item => (
+                  <div key={item.id} className="flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <span className="bg-slate-100 text-slate-600 w-8 h-8 rounded flex items-center justify-center text-xs font-bold">
+                        {item.qty}x
+                      </span>
+                      <span className="font-medium">{item.name}</span>
+                    </div>
+                    <span className="text-slate-600">{formatPrice(item.price * item.qty)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t mt-4 pt-4 flex justify-between items-center font-bold text-lg">
+                <span>Total Tagihan</span>
+                <span className="text-orange-600">{formatPrice(totalPrice)}</span>
+              </div>
+            </div>
+
+            <h3 className="font-bold mb-4">Metode Pembayaran</h3>
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                { id: 'cash', label: 'Tunai di Kasir', icon: <Banknote className="text-green-600" /> },
+                { id: 'qris', label: 'QRIS / E-Wallet', icon: <Wallet className="text-blue-600" /> },
+                { id: 'card', label: 'Kartu Debit/Kredit', icon: <CreditCard className="text-purple-600" /> }
+              ].map(method => (
+                <button
+                  key={method.id}
+                  onClick={() => setPaymentMethod(method.id)}
+                  className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all
+                    ${paymentMethod === method.id 
+                      ? 'border-orange-500 bg-orange-50' 
+                      : 'border-slate-100 bg-white'}`}
+                >
+                  {method.icon}
+                  <span className="font-medium">{method.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <button
+              disabled={!paymentMethod}
+              onClick={() => setStep(4)}
+              className={`w-full mt-10 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all
+                ${paymentMethod ? 'bg-orange-500 text-white shadow-md' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+            >
+              Konfirmasi Pesanan
+            </button>
+          </div>
+        )}
+
+        {/* Step 4: Selesai */}
+        {step === 4 && (
+          <div className="p-8 text-center flex flex-col items-center justify-center min-h-[70vh]">
+            <div className="bg-green-100 p-6 rounded-full text-green-600 mb-6 animate-bounce">
+              <CheckCircle2 size={64} />
+            </div>
+            <h2 className="text-3xl font-bold mb-4 text-slate-800">Pesanan Diterima!</h2>
+            <p className="text-slate-500 mb-8 max-w-[280px]">
+              Pesanan Anda sedang disiapkan oleh koki kami. Silakan tunggu di <strong>Meja {selectedTable}</strong>.
+            </p>
+            
+            <div className="bg-white p-6 rounded-2xl shadow-md border border-slate-50 w-full mb-8">
+              <div className="flex items-center justify-center gap-2 text-orange-600 font-bold mb-2">
+                <Clock size={20} /> Estimasi Waktu
+              </div>
+              <p className="text-2xl font-bold text-slate-800">15 - 20 Menit</p>
+            </div>
+
+            <button
+              onClick={() => {
+                setStep(1);
+                setSelectedTable(null);
+                setCart([]);
+                setPaymentMethod('');
+              }}
+              className="text-orange-500 font-bold underline decoration-2 underline-offset-4"
+            >
+              Buat Pesanan Baru
+            </button>
+          </div>
+        )}
+      </main>
+
+      {/* Floating Cart Button (Step 2 Only) */}
+      {step === 2 && cart.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pointer-events-none">
+          <div className="max-w-md mx-auto pointer-events-auto">
+            <button
+              onClick={() => setStep(3)}
+              className="w-full bg-orange-500 text-white p-4 rounded-2xl shadow-xl flex items-center justify-between animate-in slide-in-from-bottom-4 duration-300"
+            >
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <ShoppingCart size={20} />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs text-white/80 leading-none mb-1">{cart.length} Item</p>
+                  <p className="font-bold leading-none">{formatPrice(totalPrice)}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 font-bold">
+                Checkout <ChevronRight size={20} />
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
